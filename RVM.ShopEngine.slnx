@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RVM.ShopEngine.Domain/RVM.ShopEngine.Domain.csproj" />
+    <Project Path="src/RVM.ShopEngine.Infrastructure/RVM.ShopEngine.Infrastructure.csproj" />
+    <Project Path="src/RVM.ShopEngine.API/RVM.ShopEngine.API.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/RVM.ShopEngine.Test/RVM.ShopEngine.Test.csproj" />
+  </Folder>
+</Solution>

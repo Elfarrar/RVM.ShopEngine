@@ -1,0 +1,77 @@
+@page "/products"
+@using RVM.ShopEngine.Domain.Entities
+@using RVM.ShopEngine.Domain.Interfaces
+@inject IProductRepository ProductRepo
+@inject ICategoryRepository CategoryRepo
+
+<h1>Products</h1>
+
+<div class="filter-bar">
+    <select class="input-sm" @onchange="OnCategoryChanged">
+        <option value="">All Categories</option>
+        @foreach (var cat in _categories)
+        {
+            <option value="@cat.Id">@cat.Name</option>
+        }
+    </select>
+</div>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>SKU</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Active</th>
+            <th>Category</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var product in _products)
+        {
+            <tr>
+                <td>@product.Name</td>
+                <td>@product.Sku</td>
+                <td>R$ @product.Price.ToString("N2")</td>
+                <td>@product.StockQuantity</td>
+                <td><span class="@(product.IsActive ? "status-active" : "status-inactive")">@(product.IsActive ? "Yes" : "No")</span></td>
+                <td>@(_categoryMap.TryGetValue(product.CategoryId, out var name) ? name : "—")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (!_loaded)
+{
+    <div class="loading">Loading products...</div>
+}
+
+@code {
+    private List<Product> _products = [];
+    private List<Category> _categories = [];
+    private Dictionary<Guid, string> _categoryMap = [];
+    private Guid? _selectedCategoryId;
+    private bool _loaded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = await CategoryRepo.GetAllAsync(true);
+        _categoryMap = _categories.ToDictionary(c => c.Id, c => c.Name);
+        await LoadProducts();
+    }
+
+    private async Task OnCategoryChanged(ChangeEventArgs e)
+    {
+        _selectedCategoryId = string.IsNullOrEmpty(e.Value?.ToString())
+            ? null
+            : Guid.Parse(e.Value.ToString()!);
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        _products = await ProductRepo.SearchAsync(null, _selectedCategoryId, true, 0, 50);
+        _loaded = true;
+    }
+}

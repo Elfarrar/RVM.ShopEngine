@@ -1,0 +1,83 @@
+@page "/"
+@using RVM.ShopEngine.Domain.Entities
+@using RVM.ShopEngine.Domain.Interfaces
+@inject ICategoryRepository CategoryRepo
+@inject IProductRepository ProductRepo
+@inject IOrderRepository OrderRepo
+
+<h1>Dashboard</h1>
+
+@if (_loaded)
+{
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-value">@_categoryCount</span>
+            <span class="stat-label">Categories</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">@_productCount</span>
+            <span class="stat-label">Products</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">@_orderCount</span>
+            <span class="stat-label">Orders</span>
+        </div>
+    </div>
+
+    <h2>Recent Orders</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in _recentOrders)
+            {
+                <tr>
+                    <td>@order.OrderNumber</td>
+                    <td>@order.CustomerEmail</td>
+                    <td>R$ @order.TotalAmount.ToString("N2")</td>
+                    <td><span class="badge @GetOrderStatusClass(order.Status)">@order.Status</span></td>
+                    <td>@order.CreatedAt.ToString("g")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="loading">Loading dashboard...</div>
+}
+
+@code {
+    private int _categoryCount, _productCount, _orderCount;
+    private List<Order> _recentOrders = [];
+    private bool _loaded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var categories = await CategoryRepo.GetAllAsync(true);
+        _categoryCount = categories.Count;
+        _productCount = await ProductRepo.CountAsync(null, null, true);
+        _orderCount = await OrderRepo.CountAsync(null, null);
+        _recentOrders = await OrderRepo.SearchAsync(null, null, 0, 10);
+        _loaded = true;
+    }
+
+    private static string GetOrderStatusClass(RVM.ShopEngine.Domain.Enums.OrderStatus status) => status switch
+    {
+        RVM.ShopEngine.Domain.Enums.OrderStatus.Pending => "badge-warning",
+        RVM.ShopEngine.Domain.Enums.OrderStatus.Confirmed => "badge-info",
+        RVM.ShopEngine.Domain.Enums.OrderStatus.Processing => "badge-info",
+        RVM.ShopEngine.Domain.Enums.OrderStatus.Shipped => "badge-accent",
+        RVM.ShopEngine.Domain.Enums.OrderStatus.Delivered => "badge-success",
+        RVM.ShopEngine.Domain.Enums.OrderStatus.Cancelled => "badge-danger",
+        RVM.ShopEngine.Domain.Enums.OrderStatus.Refunded => "badge-danger",
+        _ => ""
+    };
+}

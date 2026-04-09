@@ -1,0 +1,94 @@
+@page "/orders"
+@using RVM.ShopEngine.Domain.Entities
+@using RVM.ShopEngine.Domain.Enums
+@using RVM.ShopEngine.Domain.Interfaces
+@inject IOrderRepository OrderRepo
+
+<h1>Orders</h1>
+
+<div class="filter-bar">
+    <select class="input-sm" @onchange="OnStatusChanged">
+        <option value="">All Statuses</option>
+        @foreach (var status in Enum.GetValues<OrderStatus>())
+        {
+            <option value="@status">@status</option>
+        }
+    </select>
+</div>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Order #</th>
+            <th>Customer</th>
+            <th>Status</th>
+            <th>Subtotal</th>
+            <th>Shipping</th>
+            <th>Total</th>
+            <th>Created</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var order in _orders)
+        {
+            <tr>
+                <td>@order.OrderNumber</td>
+                <td>@order.CustomerEmail</td>
+                <td><span class="badge @GetOrderStatusClass(order.Status)">@order.Status</span></td>
+                <td>R$ @order.Subtotal.ToString("N2")</td>
+                <td>R$ @order.ShippingCost.ToString("N2")</td>
+                <td>R$ @order.TotalAmount.ToString("N2")</td>
+                <td>@order.CreatedAt.ToString("g")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="pagination">
+    <button class="btn-sm" disabled="@(_page <= 1)" @onclick="() => LoadPage(_page - 1)">Prev</button>
+    <span>Page @_page</span>
+    <button class="btn-sm" disabled="@(_orders.Count < _pageSize)" @onclick="() => LoadPage(_page + 1)">Next</button>
+</div>
+
+@if (!_loaded)
+{
+    <div class="loading">Loading orders...</div>
+}
+
+@code {
+    private List<Order> _orders = [];
+    private OrderStatus? _selectedStatus;
+    private int _page = 1;
+    private const int _pageSize = 20;
+    private bool _loaded;
+
+    protected override async Task OnInitializedAsync() => await LoadPage(1);
+
+    private async Task OnStatusChanged(ChangeEventArgs e)
+    {
+        _selectedStatus = string.IsNullOrEmpty(e.Value?.ToString())
+            ? null
+            : Enum.Parse<OrderStatus>(e.Value.ToString()!);
+        await LoadPage(1);
+    }
+
+    private async Task LoadPage(int page)
+    {
+        _page = page;
+        var offset = (_page - 1) * _pageSize;
+        _orders = await OrderRepo.SearchAsync(null, _selectedStatus, offset, _pageSize);
+        _loaded = true;
+    }
+
+    private static string GetOrderStatusClass(OrderStatus status) => status switch
+    {
+        OrderStatus.Pending => "badge-warning",
+        OrderStatus.Confirmed => "badge-info",
+        OrderStatus.Processing => "badge-info",
+        OrderStatus.Shipped => "badge-accent",
+        OrderStatus.Delivered => "badge-success",
+        OrderStatus.Cancelled => "badge-danger",
+        OrderStatus.Refunded => "badge-danger",
+        _ => ""
+    };
+}

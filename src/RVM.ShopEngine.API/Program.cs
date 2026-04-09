@@ -26,6 +26,8 @@ try
 
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();
+    builder.Services.AddRazorComponents()
+        .AddInteractiveServerComponents();
     builder.Services.AddInfrastructure(builder.Configuration);
 
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -70,6 +72,8 @@ try
         app.UsePathBase(pathBase);
 
     app.UseForwardedHeaders();
+    app.UseStaticFiles();
+    app.UseAntiforgery();
     app.UseMiddleware<CorrelationIdMiddleware>();
     app.UseSerilogRequestLogging();
     app.UseRateLimiter();
@@ -77,6 +81,8 @@ try
     app.UseAuthorization();
 
     app.MapControllers();
+    app.MapRazorComponents<RVM.ShopEngine.API.Components.App>()
+        .AddInteractiveServerRenderMode();
     app.MapHealthChecks("/health").AllowAnonymous();
 
     app.Run();

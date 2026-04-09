@@ -1,0 +1,94 @@
+@page "/payments"
+@using RVM.ShopEngine.Domain.Entities
+@using RVM.ShopEngine.Domain.Enums
+@using RVM.ShopEngine.Domain.Interfaces
+@inject IOrderRepository OrderRepo
+
+<h1>Payments</h1>
+
+@if (_loaded)
+{
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Order #</th>
+                <th>Method</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Transaction ID</th>
+                <th>Created</th>
+                <th>Paid At</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in _paymentRows)
+            {
+                <tr>
+                    <td>@item.OrderNumber</td>
+                    <td>@FormatMethod(item.Payment.Method)</td>
+                    <td>R$ @item.Payment.Amount.ToString("N2")</td>
+                    <td><span class="badge @GetPaymentStatusClass(item.Payment.Status)">@item.Payment.Status</span></td>
+                    <td class="truncate">@(item.Payment.TransactionId ?? "—")</td>
+                    <td>@item.Payment.CreatedAt.ToString("g")</td>
+                    <td>@(item.Payment.PaidAt?.ToString("g") ?? "—")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="pagination">
+        <button class="btn-sm" disabled="@(_page <= 1)" @onclick="() => LoadPage(_page - 1)">Prev</button>
+        <span>Page @_page</span>
+        <button class="btn-sm" disabled="@(!_hasMore)" @onclick="() => LoadPage(_page + 1)">Next</button>
+    </div>
+}
+else
+{
+    <div class="loading">Loading payments...</div>
+}
+
+@code {
+    private record PaymentRow(string OrderNumber, Payment Payment);
+    private List<PaymentRow> _paymentRows = [];
+    private int _page = 1;
+    private const int _pageSize = 20;
+    private bool _loaded;
+    private bool _hasMore;
+
+    protected override async Task OnInitializedAsync() => await LoadPage(1);
+
+    private async Task LoadPage(int page)
+    {
+        _page = page;
+        var offset = (_page - 1) * _pageSize;
+        var orders = await OrderRepo.SearchAsync(null, null, offset, 50);
+        var rows = orders
+            .Where(o => o.Payment is not null)
+            .Select(o => new PaymentRow(o.OrderNumber, o.Payment!))
+            .ToList();
+
+        _hasMore = rows.Count > _pageSize;
+        _paymentRows = rows.Take(_pageSize).ToList();
+        _loaded = true;
+    }
+
+    private static string FormatMethod(PaymentMethod method) => method switch
+    {
+        PaymentMethod.CreditCard => "Credit Card",
+        PaymentMethod.DebitCard => "Debit Card",
+        PaymentMethod.Pix => "Pix",
+        PaymentMethod.BankSlip => "Bank Slip",
+        PaymentMethod.Wallet => "Wallet",
+        _ => method.ToString()
+    };
+
+    private static string GetPaymentStatusClass(PaymentStatus status) => status switch
+    {
+        PaymentStatus.Pending => "badge-warning",
+        PaymentStatus.Authorized => "badge-info",
+        PaymentStatus.Captured => "badge-success",
+        PaymentStatus.Failed => "badge-danger",
+        PaymentStatus.Refunded => "badge-danger",
+        _ => ""
+    };
+}

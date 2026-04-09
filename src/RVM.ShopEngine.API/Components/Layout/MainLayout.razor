@@ -1,0 +1,19 @@
+@inherits LayoutComponentBase
+
+<div class="app-layout">
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2>RVM.ShopEngine</h2>
+            <span class="subtitle">E-Commerce</span>
+        </div>
+        <ul class="nav-list">
+            <li><NavLink href="" Match="NavLinkMatch.All">Dashboard</NavLink></li>
+            <li><NavLink href="products">Products</NavLink></li>
+            <li><NavLink href="orders">Orders</NavLink></li>
+            <li><NavLink href="payments">Payments</NavLink></li>
+        </ul>
+    </nav>
+    <main class="main-content">
+        @Body
+    </main>
+</div>

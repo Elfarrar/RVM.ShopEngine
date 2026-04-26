@@ -1,6 +1,7 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using RVM.Common.Security;
 using RVM.ShopEngine.API.Auth;
 using RVM.ShopEngine.API.Health;
 using RVM.ShopEngine.API.Middleware;
@@ -79,6 +80,7 @@ try
         app.UsePathBase(pathBase);
 
     app.UseForwardedHeaders();
+    app.UseSecurityHeaders();
     app.UseStaticFiles();
     app.UseAntiforgery();
     app.UseMiddleware<CorrelationIdMiddleware>();

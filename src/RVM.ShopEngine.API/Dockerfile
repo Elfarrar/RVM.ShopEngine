@@ -7,6 +7,7 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+COPY nuget.config .
 COPY ["src/RVM.ShopEngine.API/RVM.ShopEngine.API.csproj", "src/RVM.ShopEngine.API/"]
 COPY ["src/RVM.ShopEngine.Domain/RVM.ShopEngine.Domain.csproj", "src/RVM.ShopEngine.Domain/"]
 COPY ["src/RVM.ShopEngine.Infrastructure/RVM.ShopEngine.Infrastructure.csproj", "src/RVM.ShopEngine.Infrastructure/"]
